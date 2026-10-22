@@ -59,7 +59,20 @@
           <section class="video-column">
             <div id="videoStage" class="video-stage">
               <video id="mainVideo" controls playsinline preload="metadata"></video>
-              <div id="noteOverlay" class="note-overlay" hidden><span class="overlay-time" id="overlayTime"></span><strong id="overlayTitle"></strong><p id="overlayText"></p></div>
+              <div class="fullscreen-tools">
+                <button id="fullscreenButton" class="fullscreen-tool" type="button" aria-label="Enter fullscreen video" title="Enter fullscreen">⛶ Fullscreen</button>
+                <button id="fullscreenPointersToggle" class="fullscreen-tool" type="button" aria-controls="fullscreenPointersPanel" aria-expanded="false" title="Show discovered pointers" hidden>☷ Pointers</button>
+              </div>
+              <aside id="fullscreenPointersPanel" class="fullscreen-pointers" aria-label="Discovered video pointers" hidden>
+                <div class="fullscreen-pointers-heading">
+                  <div><p class="eyebrow">DISCOVERED</p><h2>Pointers</h2></div>
+                  <button id="closeFullscreenPointers" class="fullscreen-tool" type="button" aria-label="Hide pointers panel">×</button>
+                </div>
+                <p class="fullscreen-pointers-help">Pointers appear here as you reach their timestamps. Select one to jump back to it.</p>
+                <div id="fullscreenPointerList" class="fullscreen-pointer-list"></div>
+                <p id="fullscreenPointersEmpty" class="fullscreen-pointers-empty">No pointers discovered yet.</p>
+              </aside>
+              <div id="noteOverlay" class="note-overlay" role="status" aria-live="polite" hidden><span class="overlay-time" id="overlayTime"></span><strong id="overlayTitle"></strong><p id="overlayText"></p></div>
             </div>
             <section id="observationsSection" class="subsection">
               <div class="section-heading"><div><p class="eyebrow">AFTER WATCHING</p><h2>Observations</h2></div><button id="saveObservations" class="button quiet small">Save observations</button></div>
