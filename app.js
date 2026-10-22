@@ -158,6 +158,9 @@
     $("#videoLayout").classList.toggle("bloop-layout", entry.type === "bloop");
     $("#pointersPanel").hidden = entry.type === "bloop";
     $("#observationsSection").hidden = entry.type === "bloop";
+    $("#fullscreenPointersToggle").hidden = true;
+    $("#fullscreenPointersPanel").hidden = true;
+    $("#fullscreenPointersToggle").setAttribute("aria-expanded", "false");
     $("#detailTitleBlock").innerHTML = `<p class="eyebrow">${entry.type === "bloop" ? "FIRST BLOOPERS" : "VIDEO LOG"}</p><h1>${escapeHTML(entry.title)}</h1><p class="date">${escapeHTML(formatDate(entry.date))}</p>${entry.description ? `<p class="description">${escapeHTML(entry.description)}</p>` : ""}`;
     els.mainVideo.pause();
     els.mainVideo.removeAttribute("src");
@@ -189,6 +192,19 @@
       <div class="pointer-tools"><button data-edit-note="${escapeHTML(note.id)}" title="Edit pointer" aria-label="Edit pointer">Edit</button><button data-delete-note="${escapeHTML(note.id)}" title="Delete pointer" aria-label="Delete pointer">×</button></div>
     </div>`).join("");
     els.pointerEmpty.hidden = notes.length > 0;
+    renderFullscreenPointers(notes);
+  }
+  function renderFullscreenPointers(notes = [...(currentEntry?.notes || [])].sort((a,b) => a.time - b.time || a.createdAt - b.createdAt)) {
+    const list = $("#fullscreenPointerList");
+    if (!list) return;
+    // Show pointers whose timestamps have been reached in the current playback session.
+    const now = els.mainVideo.currentTime || 0;
+    const discovered = notes.filter(note => note.time <= now + 0.15);
+    list.innerHTML = discovered.map(note => `<button type="button" class="fullscreen-pointer ${note.id === activePointerId ? "active" : ""}" data-fullscreen-jump="${escapeHTML(note.id)}">
+      <span class="fullscreen-pointer-time">${formatTime(note.time)}</span>
+      <span class="fullscreen-pointer-copy"><strong>${escapeHTML(note.title)}</strong><span>${escapeHTML(note.text || "")}</span></span>
+    </button>`).join("");
+    $("#fullscreenPointersEmpty").hidden = discovered.length > 0;
   }
   async function refreshCurrent() {
     if (currentEntry) currentEntry = await getEntry(currentEntry.id);
@@ -312,7 +328,7 @@
     els.overlayText.textContent = note.text || "";
     els.noteOverlay.hidden = false;
     clearTimeout(overlayTimer);
-    overlayTimer = setTimeout(() => { els.noteOverlay.hidden = true; }, 4200);
+    overlayTimer = setTimeout(() => { els.noteOverlay.hidden = true; }, 5000);
   }
   function syncPointerToTime() {
     if (!currentEntry || currentEntry.type !== "log") return;
@@ -415,7 +431,52 @@
       await deleteNote(del.dataset.deleteNote);
     }
   });
-  els.mainVideo.addEventListener("timeupdate", syncPointerToTime);
+  els.mainVideo.addEventListener("timeupdate", () => {
+    syncPointerToTime();
+    renderFullscreenPointers();
+  });
+  $("#fullscreenButton").addEventListener("click", async () => {
+    const stage = $("#videoStage");
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (stage.requestFullscreen) await stage.requestFullscreen();
+      else if (stage.webkitRequestFullscreen) stage.webkitRequestFullscreen();
+      else toast("Fullscreen is not supported by this browser.");
+    } catch (error) {
+      toast("Could not enter fullscreen. Try the browser's fullscreen controls.");
+    }
+  });
+  document.addEventListener("fullscreenchange", () => {
+    const active = document.fullscreenElement === $("#videoStage");
+    $("#fullscreenButton").textContent = active ? "⤢ Exit fullscreen" : "⛶ Fullscreen";
+    $("#fullscreenButton").setAttribute("aria-label", active ? "Exit fullscreen video" : "Enter fullscreen video");
+    $("#fullscreenPointersToggle").hidden = !active || currentEntry?.type !== "log";
+    if (!active) {
+      $("#fullscreenPointersPanel").hidden = true;
+      $("#fullscreenPointersToggle").setAttribute("aria-expanded", "false");
+    }
+    renderFullscreenPointers();
+  });
+  $("#fullscreenPointersToggle").addEventListener("click", () => {
+    const panel = $("#fullscreenPointersPanel");
+    panel.hidden = !panel.hidden;
+    $("#fullscreenPointersToggle").setAttribute("aria-expanded", String(!panel.hidden));
+    if (!panel.hidden) renderFullscreenPointers();
+  });
+  $("#closeFullscreenPointers").addEventListener("click", () => {
+    $("#fullscreenPointersPanel").hidden = true;
+    $("#fullscreenPointersToggle").setAttribute("aria-expanded", "false");
+    $("#fullscreenPointersToggle").focus();
+  });
+  $("#fullscreenPointerList").addEventListener("click", event => {
+    const jump = event.target.closest("[data-fullscreen-jump]");
+    if (!jump) return;
+    const note = (currentEntry?.notes || []).find(n => n.id === jump.dataset.fullscreenJump);
+    if (!note) return;
+    els.mainVideo.currentTime = note.time;
+    activePointerId = note.id;
+    renderPointers();
+  });
   els.mainVideo.addEventListener("seeked", () => {
     // Seeking updates the highlight, but never triggers a note overlay.
     if (currentEntry?.type === "log") {
