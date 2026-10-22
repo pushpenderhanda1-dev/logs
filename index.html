@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111111">
+  <title>Video Logs</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="pinGate" class="pin-gate">
+    <form id="pinForm" class="pin-card">
+      <div class="wordmark"><span class="mark">V</span> VIDEO LOGS</div>
+      <h1>Private space.</h1>
+      <p class="muted">Enter your PIN to continue.</p>
+      <input id="pinInput" type="password" inputmode="numeric" placeholder="PIN" autocomplete="current-password" required>
+      <button class="button primary" type="submit">Unlock</button>
+      <p id="pinError" class="error" hidden>Incorrect PIN.</p>
+      <p class="fine-print">Casual interface lock only. It does not secure files from someone inspecting this static site.</p>
+    </form>
+  </div>
+
+  <div id="app" hidden>
+    <header class="topbar">
+      <a href="#logs" class="brand"><span class="mark">V</span><span>VIDEO LOGS</span></a>
+      <nav class="nav">
+        <button class="nav-link active" data-page="logs">Video Logs</button>
+        <button class="nav-link" data-page="bloopers">First Bloopers</button>
+      </nav>
+      <button id="lockButton" class="button quiet small">Lock</button>
+    </header>
+
+    <main class="shell">
+      <section id="logsPage" class="page">
+        <div class="page-heading">
+          <div><p class="eyebrow">YOUR LIBRARY</p><h1>Video Logs</h1><p class="muted">Recordings, timestamps, and observations.</p></div>
+          <button id="newLogButton" class="button primary">＋ New log</button>
+        </div>
+        <div id="logsList" class="log-grid"></div>
+        <div id="logsEmpty" class="empty" hidden><h2>No logs yet</h2><p>Add your first recording to start building your logbook.</p><button class="button primary" id="emptyNewLog">Create a log</button></div>
+      </section>
+
+      <section id="bloopersPage" class="page" hidden>
+        <div class="page-heading">
+          <div><p class="eyebrow">OUTTAKES & ACCIDENTS</p><h1>First Bloopers</h1><p class="muted">Original takes and the moments that went sideways.</p></div>
+          <button id="newBloopButton" class="button primary">＋ Add blooper</button>
+        </div>
+        <div id="bloopersList" class="log-grid"></div>
+        <div id="bloopersEmpty" class="empty" hidden><h2>No bloopers yet</h2><p>Keep the outtakes here, separate from your notes.</p><button class="button primary" id="emptyNewBloop">Add a blooper</button></div>
+      </section>
+
+      <section id="detailPage" class="page" hidden>
+        <div class="detail-heading">
+          <button id="backButton" class="button quiet">← Back to logs</button>
+          <div class="detail-actions"><button id="editCurrentButton" class="button quiet">Edit details</button><button id="deleteCurrentButton" class="button danger-quiet">Delete</button></div>
+        </div>
+        <div id="detailTitleBlock" class="detail-title"></div>
+        <div id="videoLayout" class="video-layout">
+          <section class="video-column">
+            <div id="videoStage" class="video-stage">
+              <video id="mainVideo" controls playsinline preload="metadata"></video>
+              <div id="noteOverlay" class="note-overlay" hidden><span class="overlay-time" id="overlayTime"></span><strong id="overlayTitle"></strong><p id="overlayText"></p></div>
+            </div>
+            <section id="observationsSection" class="subsection">
+              <div class="section-heading"><div><p class="eyebrow">AFTER WATCHING</p><h2>Observations</h2></div><button id="saveObservations" class="button quiet small">Save observations</button></div>
+              <textarea id="observationsInput" class="observations" placeholder="Write long-form observations here. Paragraphs are preserved..."></textarea>
+              <p id="observationsStatus" class="hint">Saved on this device.</p>
+            </section>
+          </section>
+          <aside id="pointersPanel" class="pointers-panel">
+            <div class="section-heading"><div><p class="eyebrow">TIMESTAMPED NOTES</p><h2>Current Pointers</h2></div><button id="addNoteButton" class="button primary small">＋ Note</button></div>
+            <p class="muted small-copy">Pointers follow the playhead. Select one to jump to its timestamp.</p>
+            <div id="pointerList" class="pointer-list"></div>
+            <div id="pointerEmpty" class="empty compact" hidden>No pointers yet. Pause the video and add a note at the current time.</div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="logDialog" class="dialog">
+    <form id="logForm" class="dialog-form">
+      <div class="dialog-heading"><div><p class="eyebrow">LIBRARY ENTRY</p><h2 id="logDialogTitle">New video log</h2></div><button type="button" class="icon-button" data-close="logDialog" aria-label="Close">×</button></div>
+      <label>Title <input id="logTitle" required maxlength="120" placeholder="e.g. Take 04 — opening scene"></label>
+      <label>Date <input id="logDate" type="date" required></label>
+      <label>Description <textarea id="logDescription" rows="3" placeholder="Optional context"></textarea></label>
+      <label>Video file <input id="logVideo" type="file" accept="video/*"></label>
+      <p id="existingVideoHint" class="hint"></p>
+      <label>Thumbnail image (optional) <input id="logThumbnail" type="file" accept="image/*"></label>
+      <div class="dialog-actions"><button type="button" class="button quiet" data-close="logDialog">Cancel</button><button type="submit" class="button primary">Save log</button></div>
+      <p class="hint">Files are stored in this browser on this device, not uploaded to GitHub.</p>
+    </form>
+  </dialog>
+
+  <dialog id="noteDialog" class="dialog">
+    <form id="noteForm" class="dialog-form">
+      <div class="dialog-heading"><div><p class="eyebrow">VIDEO POINTER</p><h2 id="noteDialogTitle">Add pointer</h2></div><button type="button" class="icon-button" data-close="noteDialog" aria-label="Close">×</button></div>
+      <label>Timestamp <div class="timestamp-inputs"><input id="noteTimestamp" inputmode="numeric" placeholder="mm:ss" required><button id="useCurrentTime" type="button" class="button quiet small">Use current time</button></div></label>
+      <p class="hint">Enter mm:ss or hh:mm:ss.</p>
+      <label>Title <input id="noteTitle" required maxlength="120" placeholder="Short pointer title"></label>
+      <label>Details <textarea id="noteText" rows="5" placeholder="What should you remember at this point?"></textarea></label>
+      <div class="dialog-actions"><button type="button" class="button quiet" data-close="noteDialog">Cancel</button><button type="submit" class="button primary">Save pointer</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="bloopDialog" class="dialog">
+    <form id="bloopForm" class="dialog-form">
+      <div class="dialog-heading"><div><p class="eyebrow">OUTTAKE</p><h2 id="bloopDialogTitle">Add blooper</h2></div><button type="button" class="icon-button" data-close="bloopDialog" aria-label="Close">×</button></div>
+      <label>Title <input id="bloopTitle" required maxlength="120" placeholder="e.g. The accidental laugh"></label>
+      <label>Date <input id="bloopDate" type="date" required></label>
+      <label>Description <textarea id="bloopDescription" rows="3" placeholder="Optional description"></textarea></label>
+      <label>Video file <input id="bloopVideo" type="file" accept="video/*"></label>
+      <p id="bloopExistingVideoHint" class="hint"></p>
+      <label>Thumbnail image (optional) <input id="bloopThumbnail" type="file" accept="image/*"></label>
+      <div class="dialog-actions"><button type="button" class="button quiet" data-close="bloopDialog">Cancel</button><button type="submit" class="button primary">Save blooper</button></div>
+      <p class="hint">Files are stored in this browser on this device, not uploaded to GitHub.</p>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
